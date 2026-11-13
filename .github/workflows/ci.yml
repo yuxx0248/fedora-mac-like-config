@@ -1,0 +1,19 @@
+name: validate-config
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check Python and manifests
+        run: |
+          python3 -m compileall -q src
+          python3 src/fedora_mac_like/cli.py validate
+          PYTHONPATH=src python3 -m unittest discover -s tests -v
+      - name: Check shell syntax
+        run: bash -n install.sh scripts/*.sh

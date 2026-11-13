@@ -1,0 +1,10 @@
+{
+  "description": "Opt-in GNOME power button action. Never enabled by default. GNOME may override logind handling.",
+  "settings": [
+    {
+      "schema": "org.gnome.settings-daemon.plugins.power",
+      "key": "power-button-action",
+      "value": "'suspend'"
+    }
+  ]
+}
