@@ -1,0 +1,10 @@
+{
+  "description": "macOS-like window buttons on the left; visual-only GNOME WM configuration.",
+  "settings": [
+    {
+      "schema": "org.gnome.desktop.wm.preferences",
+      "key": "button-layout",
+      "value": "'close,minimize,maximize:'"
+    }
+  ]
+}

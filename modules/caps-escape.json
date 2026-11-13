@@ -1,0 +1,10 @@
+{
+  "description": "Opt-in keyboard example: XKB CapsLock behaves as Escape; sets full xkb-options list (may replace other options).",
+  "settings": [
+    {
+      "schema": "org.gnome.desktop.input-sources",
+      "key": "xkb-options",
+      "value": "['caps:escape']"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "description": "GNOME native touchpad preferences; three-finger swipes remain compositor-owned.",
+  "settings": [
+    {
+      "schema": "org.gnome.desktop.peripherals.touchpad",
+      "key": "tap-to-click",
+      "value": "true"
+    },
+    {
+      "schema": "org.gnome.desktop.peripherals.touchpad",
+      "key": "natural-scroll",
+      "value": "true"
+    },
+    {
+      "schema": "org.gnome.desktop.peripherals.touchpad",
+      "key": "two-finger-scrolling-enabled",
+      "value": "true"
+    },
+    {
+      "schema": "org.gnome.desktop.peripherals.touchpad",
+      "key": "click-method",
+      "value": "'fingers'"
+    }
+  ]
+}

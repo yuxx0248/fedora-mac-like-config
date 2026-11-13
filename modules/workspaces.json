@@ -1,0 +1,25 @@
+{
+  "description": "Mac-like explicit workspace switch/move shortcuts that avoid Ctrl+Left word-navigation conflicts.",
+  "settings": [
+    {
+      "schema": "org.gnome.desktop.wm.keybindings",
+      "key": "switch-to-workspace-left",
+      "value": "['<Control><Super>Left']"
+    },
+    {
+      "schema": "org.gnome.desktop.wm.keybindings",
+      "key": "switch-to-workspace-right",
+      "value": "['<Control><Super>Right']"
+    },
+    {
+      "schema": "org.gnome.desktop.wm.keybindings",
+      "key": "move-to-workspace-left",
+      "value": "['<Control><Shift><Super>Left']"
+    },
+    {
+      "schema": "org.gnome.desktop.wm.keybindings",
+      "key": "move-to-workspace-right",
+      "value": "['<Control><Shift><Super>Right']"
+    }
+  ]
+}

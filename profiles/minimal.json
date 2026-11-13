@@ -1,0 +1,6 @@
+{
+  "description": "Only touchpad behaviors, no window buttons or keyboard shortcuts.",
+  "modules": [
+    "touchpad"
+  ]
+}
