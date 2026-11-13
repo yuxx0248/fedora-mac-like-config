@@ -5,4 +5,9 @@
 # (observed as an auto-hide bottom dock popping up on its own).
 # The glob also covers remapper passthrough devices, e.g. "handy-keys
 # passthrough: keyd virtual keyboard".
-SUBSYSTEM=="input", ATTRS{name}=="*keyd virtual keyboard", ENV{LIBINPUT_ATTR_KEYBOARD_INTEGRATION}="internal"
+#
+# The udev property must be ID_INTEGRATION: libinput (evdev.c,
+# evdev_tag_keyboard) reads that name and, as of libinput 1.32, nothing else.
+# LIBINPUT_ATTR_* is the libinput *quirks database* namespace
+# (AttrKeyboardIntegration) and is inert as a udev ENV assignment.
+SUBSYSTEM=="input", ATTRS{name}=="*keyd virtual keyboard", ENV{ID_INTEGRATION}="internal"

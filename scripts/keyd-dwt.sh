@@ -28,7 +28,7 @@ matched_devices() { # udev input devices currently carrying the integration attr
   local dev props
   for dev in /dev/input/event*; do
     props="$(udevadm info -q property "$dev" 2>/dev/null || true)"
-    if grep -q '^LIBINPUT_ATTR_KEYBOARD_INTEGRATION=internal$' <<<"$props"; then
+    if grep -q '^ID_INTEGRATION=internal$' <<<"$props"; then
       echo "$dev"
     fi
   done

@@ -17,7 +17,10 @@ class KeydDwtTests(unittest.TestCase):
         text = RULE.read_text(encoding="utf-8")
         self.assertIn('SUBSYSTEM=="input"', text)
         self.assertIn('ATTRS{name}=="*keyd virtual keyboard"', text)
-        self.assertIn('ENV{LIBINPUT_ATTR_KEYBOARD_INTEGRATION}="internal"', text)
+        # libinput reads ID_INTEGRATION (evdev.c evdev_tag_keyboard);
+        # LIBINPUT_ATTR_* is quirks-database naming and is inert as udev ENV.
+        self.assertIn('ENV{ID_INTEGRATION}="internal"', text)
+        self.assertNotIn('LIBINPUT_ATTR_KEYBOARD_INTEGRATION=', text)
         # A pure tagging rule: never spawns helpers or mutates devices.
         for forbidden in ("RUN+=", "PROGRAM=", "ACTION==", "OPTIONS="):
             self.assertNotIn(forbidden, text, f"rule must stay a pure ENV tag, found {forbidden}")

@@ -19,9 +19,11 @@ A keyd-style remapper synthesizes a **virtual** keyboard, which libinput classif
 libinput's disable-while-typing (DWT) only suppresses the touchpad for *internal* keyboards, so on a
 remapped laptop, palm contact while typing keeps moving the pointer (observed symptom on the A16: the
 auto-hide bottom dock pops up during typing). `scripts/keyd-dwt.sh` installs one pure tagging rule,
-`/etc/udev/rules.d/99-keyd-internal-keyboard.rules`, setting
-`ENV{LIBINPUT_ATTR_KEYBOARD_INTEGRATION}="internal"` on `*keyd virtual keyboard` devices (the glob
-covers remapper passthrough names too):
+`/etc/udev/rules.d/99-keyd-internal-keyboard.rules`, setting `ENV{ID_INTEGRATION}="internal"` on
+`*keyd virtual keyboard` devices (the glob covers remapper passthrough names too). The property name
+matters: libinput (evdev.c, `evdev_tag_keyboard`) reads udev `ID_INTEGRATION`; `LIBINPUT_ATTR_*` is
+the libinput quirks-database namespace (`AttrKeyboardIntegration`) and is **inert** as a udev ENV
+assignment — a rule using it installs cleanly, reports marked devices, and silently does nothing:
 
 ```bash
 ./scripts/keyd-dwt.sh install   # root; writes the rule, reloads udev, reprocesses input devices
