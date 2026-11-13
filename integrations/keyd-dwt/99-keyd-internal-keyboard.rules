@@ -1,0 +1,8 @@
+# managed by fedora-mac-like-config (scripts/keyd-dwt.sh)
+# Mark keyd virtual keyboards as built-in so libinput's disable-while-typing
+# (DWT) applies to them. Without this, typing through keyd does not suppress
+# the internal touchpad: palm contact while typing leaks pointer motion
+# (observed as an auto-hide bottom dock popping up on its own).
+# The glob also covers remapper passthrough devices, e.g. "handy-keys
+# passthrough: keyd virtual keyboard".
+SUBSYSTEM=="input", ATTRS{name}=="*keyd virtual keyboard", ENV{LIBINPUT_ATTR_KEYBOARD_INTEGRATION}="internal"

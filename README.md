@@ -50,6 +50,7 @@ Backups are under `$XDG_STATE_HOME/fedora-mac-like-config/backups/` or `~/.local
 | Power button | **Unchanged unless `--power` is given** | GNOME GSettings |
 | Power short-press = screen blank | **Unchanged unless `scripts/power-blank.sh install` is run** | opt-in user services + logind drop-in |
 | Caps Lock | **Unchanged unless `--module caps-escape` is given** | GNOME input sources |
+| keyd touchpad DWT | **Unchanged unless `scripts/keyd-dwt.sh install` is run** | opt-in udev rule |
 
 GNOME's `Super` key is the closest counterpart to macOS Command for desktop shortcuts, but **Cmd+C/V and other app-local editing shortcuts are not automatically changed**: Linux applications generally use Ctrl. True per-application Command remapping requires a separate, opt-in remapper with a tested hardware/Wayland policy; see `docs/keymap.md`.
 
@@ -77,6 +78,19 @@ A macOS-like **short press = screen blank** (screen and keyboard backlight off, 
 ```
 
 It is hardware-validated on one machine only (ASUS Zenbook A16, GNOME 51, Wayland, dbus-broker). See [docs/power.md](docs/power.md) for requirements, the keyboard-backlight sudo note, and removal.
+
+## If you remap your keyboard with keyd: touchpad disable-while-typing
+
+keyd's virtual keyboard is external to libinput, so GNOME's "disable touchpad while typing" does not
+apply while typing is routed through it; palm contact then moves the pointer. An opt-in, one-rule
+integration tags those devices as built-in:
+
+```bash
+./scripts/keyd-dwt.sh install   # root; needs a GNOME Wayland re-login to take effect
+./scripts/keyd-dwt.sh status | remove
+```
+
+Not part of any profile; never run by the default installer. See [docs/keymap.md](docs/keymap.md).
 
 ## Structure / agents
 
