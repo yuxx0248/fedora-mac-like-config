@@ -1,0 +1,326 @@
+#!/usr/bin/env python3
+"""fml-tap-guard: brief touchpad suppression after typing.
+
+Why this exists: touchpad firmware palm classification needs time (~40ms on
+the reference hardware), so a brief palm tap right after a typing pause
+(~75ms contact) completes before the firmware flags it as a palm. It then
+reaches libinput as a regular finger tap and steals keyboard focus
+mid-typing, even though sustained palm presses are already rejected natively
+(MT_TOOL_PALM). This daemon re-arms protection: every keystroke arms an idle
+window (default 1s) during which the GNOME touchpad `send-events` property
+is held at 'disabled'; when the window expires the property is restored to
+its baseline value. Modifier keys never arm the window, so e.g. Ctrl+click
+keeps working.
+
+Runs as a systemd --user service. Needs read access to the keyboard evdev
+nodes (membership in the 'input' group on stock Fedora) and the session
+D-Bus (for gsettings). No third-party dependencies: raw evdev reads via
+os.read + struct.
+"""
+
+# managed by fedora-mac-like-config
+import argparse
+import os
+import select
+import signal
+import struct
+import subprocess
+import sys
+import time
+
+# Keyboard sources worth watching, matched as case-insensitive name
+# substrings. "keyboard" covers remapper virtual devices (e.g. keyd) and
+# most built-in keyboards; extend with --include for devices whose names
+# lack it. Pointing devices (touchpads, mice) do not match.
+KEYBOARD_PATTERNS = ("keyboard",)
+
+SCHEMA, KEY = "org.gnome.desktop.peripherals.touchpad", "send-events"
+
+# struct input_event on 64-bit Linux: struct timeval (2 x 8) + u16 + u16 + s32
+EVENT_SIZE = 24
+EV_KEY = 0x01
+# value 1 = press, 2 = autorepeat; both mean "the user is typing".
+ACTIVITY_VALUES = (1, 2)
+
+# Modifier keys never arm the suppression window: holding Ctrl/Alt/etc. to
+# click with the touchpad must keep working (libinput DWT has the same
+# exemption). Codes are logical (post-hwdb/post-keyd): the A16 hwdb maps
+# physical left Ctrl -> left Meta, so Super must be covered on both sides.
+MODIFIER_CODES = frozenset((
+    29, 97,    # KEY_LEFTCTRL, KEY_RIGHTCTRL
+    42, 54,    # KEY_LEFTSHIFT, KEY_RIGHTSHIFT
+    56, 100,   # KEY_LEFTALT, KEY_RIGHTALT
+    125, 126,  # KEY_LEFTMETA, KEY_RIGHTMETA
+    58, 69, 70,  # caps/num/scroll lock
+))
+
+
+def is_typing_activity(etype, code, value):
+    """True when an evdev event means 'the user is typing'."""
+    return (etype == EV_KEY and value in ACTIVITY_VALUES
+            and code not in MODIFIER_CODES)
+
+
+def log(msg):
+    sys.stdout.write(f"{time.strftime('%H:%M:%S')} tap-guard: {msg}\n")
+    sys.stdout.flush()
+
+
+def discover_keyboards(patterns=KEYBOARD_PATTERNS):
+    """Map /dev/input/eventN -> device name for keyboard-like nodes."""
+    found = {}
+    for node in sorted(os.listdir("/sys/class/input")):
+        if not node.startswith("event"):
+            continue
+        try:
+            with open(f"/sys/class/input/{node}/device/name") as f:
+                name = f.read().strip()
+        except OSError:
+            continue
+        lowered = name.lower()
+        if any(p.lower() in lowered for p in patterns):
+            found[f"/dev/input/{node}"] = name
+    return found
+
+
+def parse_event(buf):
+    """Parse one 24-byte input_event record -> (type, code, value)."""
+    _sec, _usec, etype, code, value = struct.unpack_from("<qqhhi", buf, 0)
+    return etype, code, value
+
+
+def _dbus_env():
+    """User managers may lack DBUS_SESSION_BUS_ADDRESS; synthesize it."""
+    env = dict(os.environ)
+    if "DBUS_SESSION_BUS_ADDRESS" not in env:
+        uid = os.getuid()
+        env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{uid}/bus"
+    return env
+
+
+def get_send_events():
+    out = subprocess.run(
+        ["gsettings", "get", SCHEMA, KEY],
+        capture_output=True, text=True, check=True, env=_dbus_env(),
+    ).stdout.strip()
+    if out not in ("'enabled'", "'disabled'"):
+        raise RuntimeError(f"unexpected send-events value: {out}")
+    return out.strip("'")
+
+
+def set_send_events(value, dry_run=False):
+    if dry_run:
+        log(f"DRY-RUN would set send-events={value}")
+        return
+    subprocess.run(
+        ["gsettings", "set", SCHEMA, KEY, value],
+        check=True, env=_dbus_env(),
+    )
+
+
+class Guard:
+    """Suppression state machine with injectable clock/setter for tests."""
+
+    def __init__(self, idle_secs, baseline_disabled, apply_state, now=time.monotonic, logger=log):
+        self.idle = idle_secs
+        self.baseline_disabled = baseline_disabled
+        self.apply_state = apply_state  # callable(suppressed: bool)
+        self.now = now
+        self.logger = logger
+        self.suppressed = False
+        self.deadline = None
+        self.set_calls = []  # recorded apply_state arguments (test hook)
+
+    def activity(self):
+        t = self.now()
+        self.deadline = t + self.idle
+        if self.suppressed or self.baseline_disabled:
+            return
+        self.suppressed = True
+        self.apply_state(True)
+        self.logger(f"SUPPRESS (typing) at {t:.3f}, touchpad off for {self.idle:.1f}s")
+
+    def poll(self):
+        """Called when select timeout expires; lifts suppression on idle."""
+        if not self.suppressed or self.now() < self.deadline:
+            return
+        self.suppressed = False
+        self.logger(f"RESTORE (idle {self.idle:.1f}s) at {self.now():.3f}")
+        if not self.baseline_disabled:
+            self.apply_state(False)
+
+    def select_timeout(self, rescan_deadline):
+        if self.suppressed:
+            return max(0.0, self.deadline - self.now())
+        return min(self.idle, rescan_deadline - self.now())
+
+    def shutdown_restore(self):
+        """Idempotent final restore, used by signal paths and finally."""
+        if self.suppressed and not self.baseline_disabled:
+            self.suppressed = False
+            self.apply_state(False)
+            self.logger("RESTORE (shutdown)")
+
+
+def self_test():
+    # --- parse_event vector: press of KEY_SPACE (code 57) ---
+    buf = struct.pack("<qqhhi", 1234, 5678, EV_KEY, 57, 1)
+    assert parse_event(buf) == (0x01, 57, 1), "parse_event press vector"
+    buf = struct.pack("<qqhhi", 0, 0, EV_KEY, 57, 0)
+    assert parse_event(buf)[2] == 0, "parse_event release value"
+
+    # --- modifier keys never mean typing (Ctrl+click must keep working) ---
+    assert is_typing_activity(EV_KEY, 30, 1), "plain letter press is typing"
+    assert not is_typing_activity(EV_KEY, 29, 1), "leftctrl press is not typing"
+    assert not is_typing_activity(EV_KEY, 29, 2), "leftctrl autorepeat is not typing"
+    assert not is_typing_activity(EV_KEY, 125, 1), "leftmeta press is not typing"
+    assert not is_typing_activity(EV_KEY, 126, 2), "rightmeta autorepeat is not typing"
+    assert is_typing_activity(EV_KEY, 57, 1), "space press is typing"
+    assert not is_typing_activity(EV_KEY, 57, 0), "release is never typing"
+
+    # --- Guard simulation: baseline enabled ---
+    calls = []
+    t = [100.0]
+    g = Guard(3.0, baseline_disabled=False,
+              apply_state=lambda s: calls.append(s),
+              now=lambda: t[0], logger=lambda m: None)
+    g.activity()                       # typing at 100.0
+    assert calls == [True] and g.suppressed
+    t[0] = 102.9
+    g.activity()                       # more typing at 102.9 -> deadline 105.9
+    assert calls == [True], "no duplicate suppress while already suppressed"
+    t[0] = 105.8
+    g.poll()
+    assert g.suppressed, "must stay suppressed before deadline"
+    t[0] = 105.9
+    g.poll()
+    assert not g.suppressed and calls == [True, False], "restore exactly at idle"
+
+    # --- Guard simulation: baseline disabled (touchpad already off) ---
+    calls2 = []
+    g2 = Guard(3.0, baseline_disabled=True, apply_state=lambda s: calls2.append(s),
+               now=lambda: t[0], logger=lambda m: None)
+    g2.activity()
+    g2.poll()
+    g2.shutdown_restore()
+    assert calls2 == [], "baseline disabled must never write"
+
+    # --- shutdown restore while suppressed ---
+    calls3 = []
+    g3 = Guard(3.0, baseline_disabled=False, apply_state=lambda s: calls3.append(s),
+               now=lambda: 0.0, logger=lambda m: None)
+    g3.activity()
+    g3.shutdown_restore()
+    g3.shutdown_restore()
+    assert calls3 == [True, False], "shutdown restores exactly once"
+
+    print("SELF-TEST PASS")
+
+
+def run(args):
+    baseline = get_send_events()  # fails fast if session D-Bus is unreachable
+    baseline_disabled = baseline == "disabled"
+    log(f"baseline send-events={baseline}, idle={args.idle_secs:.1f}s"
+        + (" (dry-run)" if args.dry_run else ""))
+
+    if args.include:
+        patterns = tuple(KEYBOARD_PATTERNS) + tuple(args.include)
+    else:
+        patterns = KEYBOARD_PATTERNS
+
+    apply_state = lambda s: set_send_events("disabled" if s else "enabled",
+                                            dry_run=args.dry_run)
+    guard = Guard(args.idle_secs, baseline_disabled, apply_state)
+
+    stop = {"flag": False}
+
+    def request_stop(signum, frame):
+        stop["flag"] = True
+
+    signal.signal(signal.SIGTERM, request_stop)
+    signal.signal(signal.SIGINT, request_stop)
+
+    devices = {}
+    last_scan = 0.0
+    try:
+        while not stop["flag"]:
+            now = time.monotonic()
+            if now - last_scan >= 15.0 or not devices:
+                last_scan = now
+                wanted = discover_keyboards(patterns)
+                for path in [p for p in devices if p not in wanted]:
+                    os.close(devices.pop(path)[0])
+                    log(f"dropped device {path}")
+                for path, name in wanted.items():
+                    if path in devices:
+                        continue
+                    try:
+                        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+                        devices[path] = (fd, name)
+                        log(f"watching {path} ({name})")
+                    except OSError as exc:
+                        log(f"cannot open {path} ({name}): {exc}")
+
+            timeout = guard.select_timeout(last_scan + 15.0)
+            fd_map = {fd: path for path, (fd, _name) in devices.items()}
+            readable, _, _ = select.select(list(fd_map), [], [], timeout)
+            if not readable:
+                guard.poll()  # idle window may have expired
+                continue
+            for fd in readable:
+                path = fd_map[fd]
+                name = devices[path][1]
+                try:
+                    data = os.read(fd, 4096)
+                except OSError as exc:
+                    log(f"read error on {path}: {exc}; will rescan")
+                    os.close(fd)
+                    devices.pop(path)
+                    last_scan = 0.0
+                    continue
+                if not data:  # ENODEV signals EOF on evdev nodes
+                    log(f"device gone: {path} ({name}); will rescan")
+                    os.close(fd)
+                    devices.pop(path)
+                    last_scan = 0.0
+                    continue
+                for off in range(0, len(data) - EVENT_SIZE + 1, EVENT_SIZE):
+                    if is_typing_activity(*parse_event(data[off:off + EVENT_SIZE])):
+                        guard.activity()
+    finally:
+        guard.shutdown_restore()
+    log("exiting")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--idle-secs", type=float, default=1.0,
+                    help="seconds after the last keystroke before the "
+                         "touchpad is restored (default: 1.0)")
+    ap.add_argument("--include", action="append", metavar="NAME",
+                    help="also watch devices whose name contains NAME "
+                         "(repeatable; used by tests)")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="log decisions without touching gsettings")
+    ap.add_argument("--list-devices", action="store_true",
+                    help="print matched keyboard devices and exit")
+    ap.add_argument("--self-test", action="store_true",
+                    help="run built-in assertions and exit")
+    args = ap.parse_args()
+
+    if args.self_test:
+        self_test()
+        return
+    if args.list_devices:
+        for path, name in discover_keyboards(
+                tuple(KEYBOARD_PATTERNS) + tuple(args.include or ())).items():
+            print(f"{path}  {name}")
+        return
+    if args.idle_secs < 0.5:
+        ap.error("--idle-secs must be >= 0.5 (libinput DWT already covers "
+                 "the first ~0.5s; a smaller window adds nothing)")
+    run(args)
+
+
+if __name__ == "__main__":
+    main()

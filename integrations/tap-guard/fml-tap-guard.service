@@ -1,0 +1,17 @@
+[Unit]
+# managed by fedora-mac-like-config
+# Suppresses the touchpad for a short window after typing so that brief palm
+# taps during typing pauses do not click elsewhere and steal keyboard focus.
+# See docs/keymap.md ("tap-guard") for rationale, tuning and removal.
+Description=fml tap-guard: suppress touchpad briefly after typing
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/share/fedora-mac-like-config/integrations/tap-guard/fml-tap-guard
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target

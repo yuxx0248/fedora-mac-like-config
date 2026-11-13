@@ -43,3 +43,41 @@ Caveats:
 - DWT is libinput's own ~0.5s window: it does not suppress palm contact after the window, so brief
   post-typing grazing can still move the pointer. Auto-hide dock sensitivity is a separate,
   user-owned choice (e.g. dash-to-dock `show-delay`).
+
+## tap-guard: suppress brief post-typing palm taps (opt-in user service)
+
+Native palm rejection is verified working end to end on the reference
+hardware: sustained palm presses are classified by touchpad firmware
+(confidence=0), reported by the kernel as `MT_TOOL_PALM`, and discarded by
+libinput. The one gap is **timing**: firmware classification needs ~40 ms,
+so a brief palm tap right after a typing pause (~75 ms contact) completes
+before the firmware flags it — it reaches libinput as a regular finger tap
+and can click elsewhere, stealing keyboard focus mid-typing.
+
+`scripts/tap-guard.sh` installs an opt-in, entirely user-level daemon that
+re-arms protection for that window: every keystroke holds the GNOME touchpad
+`send-events` property at `disabled` for an idle window (default **1.0 s**),
+then restores it to its baseline. Modifier keys never arm the window, so
+Ctrl+click etc. keep working.
+
+```bash
+./scripts/tap-guard.sh install   # user-level; no root; needs 'input' group
+./scripts/tap-guard.sh status    # service state + watched devices
+./scripts/tap-guard.sh remove    # undo immediately; touchpad is live again
+```
+
+Caveats:
+
+- **Trade-off**: the touchpad is dead for the window after every keystroke.
+  1.0 s is the tested balance on the reference hardware; tune via a systemd
+  drop-in override (`ExecStart=... --idle-secs=0.7`), or remove the
+  integration if the dead window bothers you more than the rare stray tap.
+- On stock Fedora the desktop user cannot read `/dev/input` nodes; the
+  script refuses to install until you join the `input` group (one-time,
+  documented by the script itself: `sudo usermod -aG input "$USER"`).
+- Requires the session D-Bus (gsettings) and a GNOME Wayland session.
+- Long thinking pauses (> idle window) are uncovered by design: a touch
+  after the window is indistinguishable from intentional touchpad use.
+- Verified only on the reference machine (ASUS Zenbook A16, GNOME 51,
+  Wayland, keyd-remapped external keyboard); the daemon matches devices by
+  name substring "keyboard" — extend with `--include` for exotic names.

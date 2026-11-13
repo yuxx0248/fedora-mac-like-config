@@ -51,6 +51,7 @@ Backups are under `$XDG_STATE_HOME/fedora-mac-like-config/backups/` or `~/.local
 | Power short-press = screen blank | **Unchanged unless `scripts/power-blank.sh install` is run** | opt-in user services + logind drop-in |
 | Caps Lock | **Unchanged unless `--module caps-escape` is given** | GNOME input sources |
 | keyd touchpad DWT | **Unchanged unless `scripts/keyd-dwt.sh install` is run** | opt-in udev rule |
+| Post-typing palm taps | **Unchanged unless `scripts/tap-guard.sh install` is run** | opt-in user service |
 
 GNOME's `Super` key is the closest counterpart to macOS Command for desktop shortcuts, but **Cmd+C/V and other app-local editing shortcuts are not automatically changed**: Linux applications generally use Ctrl. True per-application Command remapping requires a separate, opt-in remapper with a tested hardware/Wayland policy; see `docs/keymap.md`.
 
@@ -91,6 +92,23 @@ integration tags those devices as built-in:
 ```
 
 Not part of any profile; never run by the default installer. See [docs/keymap.md](docs/keymap.md).
+
+## If stray taps right after typing still bother you: tap-guard
+
+Native palm rejection covers sustained palm presses, but touchpad firmware
+classifies a contact only after ~40 ms — a brief palm tap right after a
+typing pause can still click elsewhere and steal focus. `scripts/tap-guard.sh`
+installs an opt-in user-level daemon that holds the touchpad disabled for a
+short window (default 1.0 s) after every keystroke; modifier keys are
+exempt so Ctrl+click keeps working:
+
+```bash
+./scripts/tap-guard.sh install   # user-level; no root; needs 'input' group
+./scripts/tap-guard.sh status | remove
+```
+
+Hardware-validated on one machine only (ASUS Zenbook A16, GNOME 51, Wayland).
+See [docs/keymap.md](docs/keymap.md) for the trade-off and tuning.
 
 ## Structure / agents
 
