@@ -1,0 +1,13 @@
+[Unit]
+# managed by fedora-mac-like-config (integrations/power-blank/fml-kbd-backlight-watcher.service)
+Description=fedora-mac-like-config: keyboard backlight off while the session is blanked
+Documentation=https://github.com/yuxx0248/fedora-mac-like-config#power-blank
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/fml-kbd-backlight-watcher
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target

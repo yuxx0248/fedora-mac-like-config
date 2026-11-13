@@ -1,0 +1,13 @@
+[Unit]
+# managed by fedora-mac-like-config (integrations/power-blank/fml-power-blank.service)
+Description=fedora-mac-like-config: power button short press = screen blank (no suspend, no lock)
+Documentation=https://github.com/yuxx0248/fedora-mac-like-config#power-blank
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/fml-power-blank
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target

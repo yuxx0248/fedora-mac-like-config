@@ -7,3 +7,13 @@ Hardware profile inventory must record: Fedora version, GNOME Shell version, XDG
 ASUS Zenbook A16 (Snapdragon X2) is a **validation target, not a guarantee**. System boot, kernel modules, EC, ACPI, and hardware suspension belong to your kernel/firmware stack and are out of this user-config repo. A GNOME power-action setting cannot fix a broken suspend driver.
 
 A setting that fails on a target must be documented and gated instead of silently disabling existing hardware functions.
+
+## Hardware validation inventory
+
+### ASUS Zenbook A16 (UX3607O, Snapdragon) — 2026-11-13
+
+- Fedora (Zen kernel variant), GNOME Shell 51.0, `XDG_SESSION_TYPE=wayland`, dbus-broker.
+- Power-button short press owner: user session (`pmic_pwrkey` evdev -> `fml-power-blank.service`), GNOME `power-button-action='nothing'`, logind drop-in `HandlePowerKey=ignore`.
+- Keyboard backlight: `asus::kbd_backlight` (0-3), idle auto-dim by GNOME observed; LED writes via passwordless sudo `tee` (udev MODE/GROUP does not apply to sysfs).
+- Screen blank + LED restore observed interactively over repeated cycles; long press suspend left to logind. Suspend/resume quality not exhaustively tested.
+- The A16 has no dedicated lock/blank key; Fn is firmware-consumed, so the power button is the closest macOS Touch-ID-style analog.

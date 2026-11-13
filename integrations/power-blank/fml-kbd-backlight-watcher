@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# managed by fedora-mac-like-config (integrations/power-blank/fml-kbd-backlight-watcher)
+# Turn the keyboard backlight off when the GNOME session blanks the screen
+# (org.gnome.ScreenSaver ActiveChanged=true) and restore it on wake.
+#
+# Notes validated on ASUS Zenbook A16 (GNOME 51, dbus-broker, Wayland):
+# - The sysfs LED file is root-owned; udev MODE/GROUP does not apply to sysfs
+#   attributes, so writes go through passwordless `sudo -n tee`. Without a
+#   NOPASSWD sudo rule this watcher degrades to a no-op (screen blank itself
+#   is unaffected). See docs/power.md for a minimal sudoers fragment.
+# - The ActiveChanged signal arrives twice per transition (gsd and
+#   gnome-screensaver), so transitions are tracked explicitly.
+# - GNOME also auto-dims the keyboard backlight after idle; if it already
+#   reached 0 before blanking, wake restores the default level instead.
+LED=${FML_KBD_BACKLIGHT_LED:-/sys/class/leds/asus::kbd_backlight/brightness}
+DEFAULT_LEVEL=${FML_KBD_BACKLIGHT_LEVEL:-2}
+
+set_led() {
+    printf '%s\n' "$1" | sudo -n tee "$LED" >/dev/null 2>&1 || true
+}
+
+was_blank=0
+prev=$DEFAULT_LEVEL
+
+while read -r line; do
+    case "$line" in
+        *"boolean true"*)
+            if [ "$was_blank" = 0 ]; then
+                was_blank=1
+                prev=$(cat "$LED" 2>/dev/null || echo "$DEFAULT_LEVEL")
+                set_led 0
+            fi
+            ;;
+        *"boolean false"*)
+            if [ "$was_blank" = 1 ]; then
+                was_blank=0
+                [ "$prev" -gt 0 ] 2>/dev/null || prev=$DEFAULT_LEVEL
+                set_led "$prev"
+            fi
+            ;;
+    esac
+done < <(dbus-monitor --session "type='signal',interface='org.gnome.ScreenSaver',member='ActiveChanged'")

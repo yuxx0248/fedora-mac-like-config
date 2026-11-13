@@ -48,6 +48,7 @@ Backups are under `$XDG_STATE_HOME/fedora-mac-like-config/backups/` or `~/.local
 | Workspaces | Ctrl+Super+Left/Right to switch, +Shift to move window | GNOME WM shortcuts |
 | Window buttons | Close/minimize/maximize on left | GNOME WM preferences |
 | Power button | **Unchanged unless `--power` is given** | GNOME GSettings |
+| Power short-press = screen blank | **Unchanged unless `scripts/power-blank.sh install` is run** | opt-in user services + logind drop-in |
 | Caps Lock | **Unchanged unless `--module caps-escape` is given** | GNOME input sources |
 
 GNOME's `Super` key is the closest counterpart to macOS Command for desktop shortcuts, but **Cmd+C/V and other app-local editing shortcuts are not automatically changed**: Linux applications generally use Ctrl. True per-application Command remapping requires a separate, opt-in remapper with a tested hardware/Wayland policy; see `docs/keymap.md`.
@@ -65,6 +66,17 @@ Some touch gestures are owned by the compositor and **cannot be redefined by GSe
 Power-key handling is layered: GNOME may take a `handle-power-key` low-level inhibitor; systemd-logind only handles the key when no such inhibitor is held. `HandlePowerKey=` does **not** reliably override an active GNOME session. See [docs/power.md](docs/power.md) for both routes, caveats, diagnostics, and the explicit system-level helper.
 
 `interactive` is a power-off dialog; GNOME's interactive dialog may time out and shut down. Do not treat it as a safe lock-screen command. Never test power-button changes during unsaved work.
+
+A macOS-like **short press = screen blank** (screen and keyboard backlight off, background processes and timers keep running, no lock) is available as a separate opt-in integration of two user services; it is not part of any profile and requires `--module power-nothing` first:
+
+```bash
+./install.sh --module power-nothing
+./scripts/power-blank.sh install
+./scripts/power-blank.sh install-logind   # optional root fallback (greeter/non-GNOME)
+./scripts/power-blank.sh status | remove
+```
+
+It is hardware-validated on one machine only (ASUS Zenbook A16, GNOME 51, Wayland, dbus-broker). See [docs/power.md](docs/power.md) for requirements, the keyboard-backlight sudo note, and removal.
 
 ## Structure / agents
 
