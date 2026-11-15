@@ -8,6 +8,14 @@ class ManifestTests(unittest.TestCase):
         self.assertGreaterEqual(len(rows), 8)
         self.assertEqual(len({(r["schema"], r["key"]) for r in rows}), len(rows))
 
+    def test_default_includes_screenshot_chords(self):
+        rows = entries("default")
+        by_target = {(r["schema"], r["key"]): r["value"] for r in rows}
+        shell = "org.gnome.shell.keybindings"
+        self.assertEqual(by_target[(shell, "screenshot")], "['<Shift>Print', '<Shift><Control>3']")
+        self.assertEqual(by_target[(shell, "show-screenshot-ui")], "['Print', '<Shift><Control>4']")
+        self.assertEqual(by_target[(shell, "screenshot-window")], "['<Control>Print']")
+
     def test_explicit_power(self):
         rows = entries("minimal", power="suspend")
         self.assertTrue(any(r["key"] == "power-button-action" and r["value"] == "'suspend'" for r in rows))

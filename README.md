@@ -14,7 +14,7 @@ cd fedora-mac-like-config
 ./install.sh
 ```
 
-The default profile applies touchpad settings, workspace shortcuts, and macOS-style left-side titlebar buttons. **Existing explicit user settings are preserved by default.** Every changed key is backed up first.
+The default profile applies touchpad settings, workspace shortcuts, macOS-style screenshot chords, and left-side titlebar buttons. **Existing explicit user settings are preserved by default.** Every changed key is backed up first.
 
 ```bash
 ./install.sh --dry-run                  # preview without changing anything
@@ -46,6 +46,7 @@ Backups are under `$XDG_STATE_HOME/fedora-mac-like-config/backups/` or `~/.local
 | Touchpad | Tap to click, natural scrolling, two-finger scroll, two-finger secondary click | GNOME GSettings |
 | Gestures | GNOME native three-finger workspaces / overview gestures | GNOME/Wayland (no override needed) |
 | Workspaces | Ctrl+Super+Left/Right to switch, +Shift to move window | GNOME WM shortcuts |
+| Screenshot chords | Shift+physical-Alt+3/4 (Cmd-like), Print variants kept; captures auto-save to `~/Pictures/Screenshots` | GNOME Shell keybindings |
 | Window buttons | Close/minimize/maximize on left | GNOME WM preferences |
 | Power button | **Unchanged unless `--power` is given** | GNOME GSettings |
 | Power short-press = screen blank | **Unchanged unless `scripts/power-blank.sh install` is run** | opt-in user services + logind drop-in |

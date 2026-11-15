@@ -13,6 +13,20 @@ Touchpad:
 
 Future opt-in remapper modules may use xremap/keyd, but must document security/device access, key repeat, per-app exclusions (especially terminals), Wayland limitations, launch on login, and reversible uninstall.
 
+## Screenshot chords (default profile, `screenshot` module)
+
+macOS-style capture chords via `org.gnome.shell.keybindings`: `Shift+physical Alt+3` opens the
+interactive capture, `Shift+physical Alt+4` the capture UI, `physical Alt+Print` captures the
+focused window; `Print`/`Shift+Print` stay configured as on the validated machine. GNOME saves
+captures automatically to `~/Pictures/Screenshots/` and mirrors them to the clipboard.
+
+**Modifier caveat:** "physical Alt" means the macOS Command position. On the validated A16 this
+works because a machine-local hwdb rule (`/etc/udev/hwdb.d/90-mac-style-kbd.hwdb`, **not** part of
+this repo) maps physical left Alt to `Ctrl` at the evdev level. On an unremapped keyboard the same
+manifest applies plain `Ctrl+Shift+3/4`, which loses the Cmd-like meaning and may collide with app
+shortcuts. Review with `--dry-run` on other machines; explicit pre-existing values are preserved
+unless `--force`.
+
 ## keyd remappers: make disable-while-typing apply (opt-in udev integration)
 
 A keyd-style remapper synthesizes a **virtual** keyboard, which libinput classifies as external.

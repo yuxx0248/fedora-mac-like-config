@@ -1,0 +1,20 @@
+{
+  "description": "macOS-like screenshot chords: Shift+physical-Alt+3/4. Assumes the machine-local hwdb remap (physical left Alt -> left Ctrl, mac Command role); on unremapped keyboards these are plain Ctrl+Shift+3/4. Print variants reproduce the validated machine state.",
+  "settings": [
+    {
+      "schema": "org.gnome.shell.keybindings",
+      "key": "screenshot",
+      "value": "['<Shift>Print', '<Shift><Control>3']"
+    },
+    {
+      "schema": "org.gnome.shell.keybindings",
+      "key": "show-screenshot-ui",
+      "value": "['Print', '<Shift><Control>4']"
+    },
+    {
+      "schema": "org.gnome.shell.keybindings",
+      "key": "screenshot-window",
+      "value": "['<Control>Print']"
+    }
+  ]
+}
