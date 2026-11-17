@@ -52,6 +52,7 @@ Backups are under `$XDG_STATE_HOME/fedora-mac-like-config/backups/` or `~/.local
 | Power short-press = screen blank | **Unchanged unless `scripts/power-blank.sh install` is run** | opt-in user services + logind drop-in |
 | Caps Lock | **Unchanged unless `--module caps-escape` is given** | GNOME input sources |
 | keyd touchpad DWT | **Unchanged unless `scripts/keyd-dwt.sh install` is run** | opt-in udev rule |
+| Modifier layout (mac bottom row + dual-role physical Ctrl) | **Unchanged unless `scripts/mac-kbd-layout.sh install` is run** | opt-in udev hwdb + keyd config |
 
 GNOME's `Super` key is the closest counterpart to macOS Command for desktop shortcuts, but **Cmd+C/V and other app-local editing shortcuts are not automatically changed**: Linux applications generally use Ctrl. True per-application Command remapping requires a separate, opt-in remapper with a tested hardware/Wayland policy; see `docs/keymap.md`.
 
@@ -92,6 +93,24 @@ integration tags those devices as built-in:
 ```
 
 Not part of any profile; never run by the default installer. See [docs/keymap.md](docs/keymap.md).
+
+## macOS-like bottom-row modifier layout (opt-in, Zenbook A16)
+
+On the validated machine the bottom-left physical row is laid out mac-style at the evdev level:
+physical Alt sits in the Command position (emits Ctrl, so Alt+C is "copy" and Alt+Shift+3/4 are the
+screenshot chords), physical Win is Option (Alt), and physical Ctrl becomes a dual-role key — tap
+opens Overview (Super), held it delivers real Ctrl chords, with Ctrl+C encoded as Ctrl+Shift+C so
+the terminal receives a true SIGINT while GNOME Terminal's copy binding (`<Control>c`) keeps
+physical Alt+C as "copy". This ships as one udev hwdb file plus one keyd config, installed by:
+
+```bash
+./scripts/mac-kbd-layout.sh install   # root; the hwdb keymap reaches an already-open keyboard only after a reboot
+./scripts/mac-kbd-layout.sh status | remove
+```
+
+Not part of any profile; never run by the default installer. Hardware-validated on ASUS Zenbook A16
+(keyboard `0B05:4B42`) only, and the keyd `[ids]` section assumes that keyboard. Pairing: the
+`screenshot` module's chords assume physical Alt = Ctrl from this layout. See [docs/keymap.md](docs/keymap.md).
 
 ## Structure / agents
 

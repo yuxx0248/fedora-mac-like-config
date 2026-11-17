@@ -21,11 +21,46 @@ focused window; `Print`/`Shift+Print` stay configured as on the validated machin
 captures automatically to `~/Pictures/Screenshots/` and mirrors them to the clipboard.
 
 **Modifier caveat:** "physical Alt" means the macOS Command position. On the validated A16 this
-works because a machine-local hwdb rule (`/etc/udev/hwdb.d/90-mac-style-kbd.hwdb`, **not** part of
-this repo) maps physical left Alt to `Ctrl` at the evdev level. On an unremapped keyboard the same
+works because a machine-local hwdb rule (`/etc/udev/hwdb.d/90-mac-style-kbd.hwdb`) maps physical
+left Alt to `Ctrl` at the evdev level; that rule is owned by the opt-in `mac-kbd-layout`
+integration (`scripts/mac-kbd-layout.sh`), not by any profile. On an unremapped keyboard the same
 manifest applies plain `Ctrl+Shift+3/4`, which loses the Cmd-like meaning and may collide with app
 shortcuts. Review with `--dry-run` on other machines; explicit pre-existing values are preserved
 unless `--force`.
+
+## Modifier layout: mac bottom row + dual-role physical Ctrl (opt-in `mac-kbd-layout`)
+
+Machine-validated layout for the ASUS Zenbook A16 (keyboard `0B05:4B42`), installed by
+`scripts/mac-kbd-layout.sh` as one udev hwdb file plus one keyd config (both with a management
+marker; neither is part of any profile):
+
+| Physical key | Emits | Role |
+| --- | --- | --- |
+| left Ctrl | tap = Super (Overview); held = Ctrl chords | mac Command position, dual role |
+| Fn | unchanged | consumed by EC firmware, unreachable |
+| left Win | Alt | Option position |
+| left Alt (next to Space) | Ctrl | Command-role modifier; Alt+C = copy, Alt+Shift+3/4 = screenshots |
+
+Why the physical Ctrl key is dual-role instead of a plain swap: GNOME Terminal keeps its
+mac-style `copy = <Control>c` accelerator by design, which would swallow every plain Ctrl+C before
+it reaches the terminal. The keyd config therefore rewrites only the `c` key inside the
+held-Ctrl layer to emit `Ctrl+Shift+C`: the accelerator does not match that chord, and VTE encodes
+`Ctrl+Shift+C` as `0x03` — the same byte as Ctrl+C — so the child process sees a real SIGINT.
+Held-physical-Ctrl+Space still emits Super+Space for the input-method switch via an explicit
+binding.
+
+Caveats learned on hardware (2026-11-16):
+
+- An already-open keyboard device did not pick up a new hwdb keymap from
+  `udevadm trigger` alone; the hwdb half reliably needs one reboot.
+- `keyd reload` applies config changes live, but verify all chords afterwards; a daemon that was
+  stopped/started mid-session once left stale behavior behind until another restart.
+- Third-party grabbers that forward key events (e.g. the Handy dictation app's "handy-keys"
+  passthrough) sit between keyd and GNOME and can garble forwarded modifiers after a reboot race;
+  if chords die after login, quit that app and retest before touching keyd or hwdb.
+- Physical Ctrl+chords in GUI apps outside terminals deliver the plain Ctrl chord from the held
+  layer (only `c` gains Shift), so browser devtools-style Ctrl+Shift+C collisions are limited to
+  the copy key itself; copy stays on physical Alt+C everywhere, as on macOS.
 
 ## keyd remappers: make disable-while-typing apply (opt-in udev integration)
 

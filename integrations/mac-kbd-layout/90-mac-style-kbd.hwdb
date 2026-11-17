@@ -1,0 +1,20 @@
+# managed by fedora-mac-like-config
+# macOS-style modifier layout for ASUS Zenbook A16 keyboard (ASUS 0B05:4B42)
+# Bottom-left cluster matched to the Mac row fn, control, option, command:
+#   physical left Ctrl (pos 1) -> left Meta  (Super: tap=Overview, fn-style
+#                               modifier; Super+Space switches input method)
+#   physical left Win  (pos 3) -> left Alt   (Option)
+#   physical left Alt  (pos 4) -> left Ctrl  (Command role / terminal Ctrl)
+# physical Fn (pos 2) is consumed by the EC firmware and never reaches the
+# OS, so it cannot be remapped; Fn+F-key combos keep working as before.
+# Note: this keyboard's driver emits AT set-1 style scancodes (a=0x1e/30),
+# so entries are provided in both AT and HID-usage formats; only the
+# matching set takes effect, the other is silently ignored by udev.
+evdev:input:b0018v0B05p4B42*
+ KEYBOARD_KEY_700e0=leftmeta
+ KEYBOARD_KEY_700e3=leftalt
+ KEYBOARD_KEY_700e2=leftctrl
+ KEYBOARD_KEY_1d=leftmeta
+ KEYBOARD_KEY_38=leftctrl
+ KEYBOARD_KEY_7d=leftalt
+ KEYBOARD_KEY_7e=leftalt
