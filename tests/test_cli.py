@@ -23,6 +23,11 @@ class ManifestTests(unittest.TestCase):
             [("org.gnome.mutter", "dynamic-workspaces", "true")],
         )
 
+    def test_default_enables_dynamic_workspaces(self):
+        rows = entries("default")
+        self.assertIn(("org.gnome.mutter", "dynamic-workspaces", "true"),
+                      [(r["schema"], r["key"], r["value"]) for r in rows])
+
     def test_explicit_power(self):
         rows = entries("minimal", power="suspend")
         self.assertTrue(any(r["key"] == "power-button-action" and r["value"] == "'suspend'" for r in rows))

@@ -9,9 +9,13 @@
 5. `scripts/power-system.sh` manages a narrowly named systemd-logind drop-in by explicit operator choice. Never run this from the default installer.
 6. `scripts/power-blank.sh` is a separately documented opt-in integration: it installs two narrowly scoped **user** services (power-key short press -> screen blank, keyboard backlight watcher) plus an optional logind drop-in. It requires GNOME `power-button-action='nothing'`, and is not part of any profile.
 
-GNOME shell Wayland owns multitouch swipe recognition: user GSettings can configure tapping/scrolling but cannot promise arbitrary 3/4-finger gesture replacements. Keyboard layout XKB is distinct from app-specific key semantics. The default install ships no background daemon; see the opt-in `power-blank` integration in `docs/power.md`. The separate opt-in fullscreen workspace isolation extension runs inside GNOME Shell; see `docs/fullscreen-workspace.md`.
+GNOME shell Wayland owns multitouch swipe recognition: user GSettings can configure tapping/scrolling but cannot promise arbitrary 3/4-finger gesture replacements. Keyboard layout XKB is distinct from app-specific key semantics. The default install ships no separate background daemon; see the opt-in `power-blank` integration in `docs/power.md`. The default installer installs the bundled fullscreen top bar and workspace isolation extensions on GNOME Shell 51 without replacing existing extension files; see `docs/fullscreen-top-bar.md` and `docs/fullscreen-workspace.md`.
 
-The `dynamic-workspaces` profile explicitly enables GNOME dynamic workspaces without changing shortcuts; it is not part of the default profile. Its setting is handled by the normal preserve-and-rollback mechanism.
+The default profile enables GNOME dynamic workspaces; the `dynamic-workspaces` profile applies only that setting without changing shortcuts. Its setting is handled by the normal preserve-and-rollback mechanism.
+
+Workspace thumbnail reordering is a separate opt-in GNOME Shell extension; see `docs/workspace-reorder.md`.
+
+Larger workspace thumbnails in Overview are a bundled GNOME Shell 51 extension installed by default; see `docs/overview-workspace-size.md`.
 
 ## Adding a module
 

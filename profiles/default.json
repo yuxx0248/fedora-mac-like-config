@@ -1,8 +1,9 @@
 {
-  "description": "Mac-like GNOME workspace, touchpad, screenshot chords and window buttons. Existing explicit values are preserved.",
+  "description": "Mac-like GNOME dynamic workspaces, touchpad, screenshot chords and window buttons. Existing explicit values are preserved.",
   "modules": [
     "touchpad",
     "workspaces",
+    "dynamic-workspaces",
     "screenshot",
     "window-controls"
   ]

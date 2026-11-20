@@ -1,0 +1,24 @@
+const assert = require('assert');
+const fs = require('fs');
+const vm = require('vm');
+let code = fs.readFileSync(process.argv[2], 'utf8').replace(/^import .*;\n/gm, '')
+    .replace('export default class OverviewWorkspaceSize extends Extension', 'class OverviewWorkspaceSize extends Extension');
+code += '\nthis.OverviewWorkspaceSize = OverviewWorkspaceSize;';
+let relayouts = 0;
+const thumbnails = {_maxThumbnailScale: 0.05, _shouldShow: false, _updateShouldShow() { this._shouldShow = false; }, notify() {}, queue_relayout() { relayouts++; }};
+const controls = {_thumbnailsBox: thumbnails, layout_manager: {layout_changed() { relayouts++; }}};
+const context = {global: {workspace_manager: {n_workspaces: 2}}, Extension: class {}, Main: {overview: {_overview: {controls}}}};
+vm.runInNewContext(code, context);
+const extension = new context.OverviewWorkspaceSize();
+extension.enable();
+assert.strictEqual(thumbnails._maxThumbnailScale, 0.15);
+assert.strictEqual(thumbnails._shouldShow, true);
+assert.strictEqual(relayouts, 2);
+extension.disable();
+assert.strictEqual(thumbnails._maxThumbnailScale, 0.05);
+assert.strictEqual(thumbnails._shouldShow, false);
+assert.strictEqual(relayouts, 4);
+extension.enable();
+thumbnails._maxThumbnailScale = 0.2;
+extension.disable();
+assert.strictEqual(thumbnails._maxThumbnailScale, 0.2);

@@ -1,0 +1,6 @@
+{
+  "uuid": "fullscreen-top-bar@fedora-mac-like-config",
+  "name": "Fullscreen Top Bar Reveal",
+  "description": "Reveal the GNOME top bar at the top edge of a fullscreen primary monitor.",
+  "shell-version": ["51"]
+}

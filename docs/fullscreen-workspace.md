@@ -27,11 +27,11 @@ GNOME 51 on Wayland is the only targeted version. With primary-only workspaces,
 windows on secondary monitors can be visible across workspaces; test multi-monitor
 setups separately. Other extensions that move windows or fullscreen them later can
 change the result (including the locally installed ZCode Auto Place extension). This
-integration uses Shell internals and is separate from the default installer and profiles.
+integration uses Shell internals and is installed by the default installer on GNOME Shell 51 and is separate from GSettings profiles.
 
 ## Automatic cleanup of empty workspaces
 
-To match the dynamic workspace behavior, apply the dedicated profile:
+Dynamic workspaces are part of the default profile. To apply only this setting, use the dedicated profile:
 
 ```bash
 ./install.sh --profile dynamic-workspaces --dry-run

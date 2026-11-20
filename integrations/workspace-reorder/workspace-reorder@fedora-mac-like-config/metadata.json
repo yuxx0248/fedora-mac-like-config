@@ -1,0 +1,6 @@
+{
+  "uuid": "workspace-reorder@fedora-mac-like-config",
+  "name": "Workspace Thumbnail Reorder",
+  "description": "Drag overview workspace thumbnails to change workspace order.",
+  "shell-version": ["51"]
+}

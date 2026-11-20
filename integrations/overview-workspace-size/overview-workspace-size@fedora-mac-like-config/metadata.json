@@ -1,0 +1,6 @@
+{
+  "uuid": "overview-workspace-size@fedora-mac-like-config",
+  "name": "Larger Overview Workspaces",
+  "description": "Enlarge workspace thumbnails in Overview to roughly match the applications page.",
+  "shell-version": ["51"]
+}

@@ -14,7 +14,7 @@ cd fedora-mac-like-config
 ./install.sh
 ```
 
-The default profile applies touchpad settings, workspace shortcuts, macOS-style screenshot chords, and left-side titlebar buttons. **Existing explicit user settings are preserved by default.** Every changed key is backed up first.
+The default profile applies touchpad settings, dynamic workspaces, workspace shortcuts, macOS-style screenshot chords, and left-side titlebar buttons. On GNOME Shell 51, the default installer also installs the bundled fullscreen top bar, fullscreen workspace isolation and larger overview workspace extensions. **Existing explicit user settings are preserved by default.** Every changed key is backed up first.
 
 ```bash
 ./install.sh --dry-run                  # preview without changing anything
@@ -38,6 +38,8 @@ python3 src/fedora_mac_like/cli.py rollback --force    # undo even if edited sin
 python3 src/fedora_mac_like/cli.py validate            # validate manifests
 ```
 
+The bundled extensions do not overwrite an existing extension with the same UUID or enable one explicitly disabled by the user. GNOME Wayland may require a manual logout and login. The GSettings rollback does not uninstall extensions; use the disable/uninstall commands in each extension’s instructions.
+
 Backups are under `$XDG_STATE_HOME/fedora-mac-like-config/backups/` or `~/.local/state/fedora-mac-like-config/backups/`.
 
 ## What's included?
@@ -47,10 +49,13 @@ Backups are under `$XDG_STATE_HOME/fedora-mac-like-config/backups/` or `~/.local
 | Touchpad | Tap to click, natural scrolling, two-finger scroll, two-finger secondary click | GNOME GSettings |
 | Gestures | GNOME native three-finger workspaces / overview gestures | GNOME/Wayland (no override needed) |
 | Workspaces | Ctrl+Super+Left/Right to switch, +Shift to move window | GNOME WM shortcuts |
-| Empty workspaces | **Unchanged unless `--profile dynamic-workspaces` is given** | GNOME dynamic workspaces; [instructions](docs/fullscreen-workspace.md) |
+| Empty workspaces | GNOME removes empty workspaces automatically; existing explicit settings are preserved | GNOME dynamic workspaces; [instructions](docs/fullscreen-workspace.md) |
 | Screenshot chords | Shift+physical-Alt+3/4 (Cmd-like), Print variants kept; captures auto-save to `~/Pictures/Screenshots` | GNOME Shell keybindings |
 | Window buttons | Close/minimize/maximize on left | GNOME WM preferences |
-| Fullscreen workspaces | **Unchanged unless the bundled extension is enabled** | opt-in GNOME Shell extension; [instructions](docs/fullscreen-workspace.md) |
+| Overview workspace size | Bundled extension installed by default on GNOME Shell 51 | bundled GNOME Shell extension; [instructions](docs/overview-workspace-size.md) |
+| Workspace order | **Unchanged unless the bundled extension is installed and enabled** | opt-in GNOME Shell extension; [instructions](docs/workspace-reorder.md) |
+| Fullscreen workspaces | Bundled extension installed by default on GNOME Shell 51 | bundled GNOME Shell extension; [instructions](docs/fullscreen-workspace.md) |
+| Fullscreen top bar | Bundled extension installed by default on GNOME Shell 51 | bundled GNOME Shell extension; [instructions](docs/fullscreen-top-bar.md) |
 | Power button | **Unchanged unless `--power` is given** | GNOME GSettings |
 | Power short-press = screen blank | **Unchanged unless `scripts/power-blank.sh install` is run** | opt-in user services + logind drop-in |
 | Caps Lock | **Unchanged unless `--module caps-escape` is given** | GNOME input sources |
