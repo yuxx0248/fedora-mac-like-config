@@ -1,0 +1,6 @@
+{
+  "description": "Opt-in dynamic workspace management without changing shortcuts or other settings.",
+  "modules": [
+    "dynamic-workspaces"
+  ]
+}

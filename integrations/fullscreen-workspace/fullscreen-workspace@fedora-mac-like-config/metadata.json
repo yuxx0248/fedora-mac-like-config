@@ -1,0 +1,6 @@
+{
+  "uuid": "fullscreen-workspace@fedora-mac-like-config",
+  "name": "Fullscreen Workspace Isolation",
+  "description": "Move new normal windows out of workspaces containing a fullscreen window.",
+  "shell-version": ["51"]
+}

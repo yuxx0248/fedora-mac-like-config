@@ -19,6 +19,7 @@ The default profile applies touchpad settings, workspace shortcuts, macOS-style 
 ```bash
 ./install.sh --dry-run                  # preview without changing anything
 ./install.sh --profile minimal          # touchpad only
+./install.sh --profile dynamic-workspaces # automatic empty-workspace cleanup only
 ./install.sh --force                    # explicitly override existing customizations
 ./install.sh --power interactive        # opt-in power-button dialog
 ./install.sh --power suspend            # opt-in suspend; test hardware first!
@@ -46,8 +47,10 @@ Backups are under `$XDG_STATE_HOME/fedora-mac-like-config/backups/` or `~/.local
 | Touchpad | Tap to click, natural scrolling, two-finger scroll, two-finger secondary click | GNOME GSettings |
 | Gestures | GNOME native three-finger workspaces / overview gestures | GNOME/Wayland (no override needed) |
 | Workspaces | Ctrl+Super+Left/Right to switch, +Shift to move window | GNOME WM shortcuts |
+| Empty workspaces | **Unchanged unless `--profile dynamic-workspaces` is given** | GNOME dynamic workspaces; [instructions](docs/fullscreen-workspace.md) |
 | Screenshot chords | Shift+physical-Alt+3/4 (Cmd-like), Print variants kept; captures auto-save to `~/Pictures/Screenshots` | GNOME Shell keybindings |
 | Window buttons | Close/minimize/maximize on left | GNOME WM preferences |
+| Fullscreen workspaces | **Unchanged unless the bundled extension is enabled** | opt-in GNOME Shell extension; [instructions](docs/fullscreen-workspace.md) |
 | Power button | **Unchanged unless `--power` is given** | GNOME GSettings |
 | Power short-press = screen blank | **Unchanged unless `scripts/power-blank.sh install` is run** | opt-in user services + logind drop-in |
 | Caps Lock | **Unchanged unless `--module caps-escape` is given** | GNOME input sources |

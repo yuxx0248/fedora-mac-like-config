@@ -16,6 +16,13 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(by_target[(shell, "show-screenshot-ui")], "['Print', '<Shift><Control>4']")
         self.assertEqual(by_target[(shell, "screenshot-window")], "['<Control>Print']")
 
+    def test_dynamic_workspaces_profile_only_changes_workspace_policy(self):
+        rows = entries("dynamic-workspaces")
+        self.assertEqual(
+            [(r["schema"], r["key"], r["value"]) for r in rows],
+            [("org.gnome.mutter", "dynamic-workspaces", "true")],
+        )
+
     def test_explicit_power(self):
         rows = entries("minimal", power="suspend")
         self.assertTrue(any(r["key"] == "power-button-action" and r["value"] == "'suspend'" for r in rows))

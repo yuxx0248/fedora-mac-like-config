@@ -1,0 +1,10 @@
+{
+  "description": "Let GNOME automatically remove empty workspaces while retaining a spare workspace.",
+  "settings": [
+    {
+      "schema": "org.gnome.mutter",
+      "key": "dynamic-workspaces",
+      "value": "true"
+    }
+  ]
+}
